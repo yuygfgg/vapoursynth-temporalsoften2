@@ -3,7 +3,13 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#ifdef __X86_64__
 #include <emmintrin.h>
+#elif defined(__ARM_NEON__)
+#include "sse2neon.h"
+#else
+#error "unsupported platform, please port with simde library"
+#endif
 #include "VapourSynth.h"
 
 #ifdef _MSC_VER
@@ -29,68 +35,6 @@ typedef struct {
     void (VS_CC *proc)(uint8_t *, const uint8_t **, int, int, int);
 } TemporalSoftenData;
 
-
-#if 0
-static void VS_CC
-mode2_8bit(uint8_t *dstp, const uint8_t **srcp, int frames, int width,
-           int height, int stride, int threshold)
-{
-    int y;
-    int half_frames = frames / 2;
-
-    for (y = 0; y < height; y++) {
-        int x;
-        for (x = 0; x < width; x++) {
-            unsigned sum = dstp[x];
-            int f;
-            for (f = 1; f < frames; f++) { // kernel_loop
-                int val = dstp[x];
-                if (abs(val - srcp[f][x]) <= threshold) {
-                    val = srcp[f][x];
-                }
-                sum += val;
-            }
-            dstp[x] = (uint8_t)((sum + half_frames) / frames);
-        }
-        for (x = 1; x < frames; srcp[x++] += stride);
-        dstp += stride;
-    }
-}
-
-
-static void VS_CC
-mode2_16bit(uint8_t *dstp8, const uint8_t **srcp8, int frames, int width,
-            int height, int stride, int threshold)
-{
-    uint16_t *dstp = (uint16_t *)dstp8;
-    const uint16_t *srcp[16];
-    int y;
-    int half_frames = frames / 2;
-
-    stride /= 2;
-    for (y = 1; y < frames; y++) {
-        srcp[y] = (uint16_t *)srcp8[y];
-    }
-
-    for (y = 0; y < height; y++) {
-        int x;
-        for (x = 0; x < width; x++) {
-            unsigned sum = dstp[x];
-            int f;
-            for (f = 1; f < frames; f++) { // kernel_loop
-                int val = dstp[x];
-                if (abs(val - srcp[f][x]) <= threshold) {
-                    val = srcp[f][x];
-                }
-                sum += val;
-            }
-            dstp[x] = (uint16_t)((sum + half_frames) / frames);
-        }
-        for (x = 1; x < frames; srcp[x++] += stride);
-        dstp += stride;
-    }
-}
-#endif
 
 static void TS_FUNC_ALIGN VS_CC
 mode2_8bit_sse2(uint8_t *dstp, const uint8_t **srcp, int frames, int frame_size,

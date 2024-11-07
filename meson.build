@@ -21,13 +21,6 @@ ldflags = [
 
 host_cpu_family = host_machine.cpu_family()
 
-if host_cpu_family.startswith('x86')
-  cflags += ['-mfpmath=sse', '-msse2']
-else
-  error('Currently only x86 systems are supported.')
-endif
-
-
 host_system = host_machine.system()
 
 if host_system == 'windows' or host_system == 'cygwin'
